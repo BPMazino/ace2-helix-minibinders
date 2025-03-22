@@ -1,0 +1,59 @@
+<ROSETTASCRIPTS>
+
+<SCOREFXNS>
+	<ScoreFunction name="SFXN1" weights="fldsgn_cen">
+        <Reweight scoretype="cen_pair_motifs" weight="1"/>
+		<Reweight scoretype="hbond_sr_bb" weight="1.0" />
+        <Set target_clash_pdb="target.pdb" />
+        <Reweight scoretype="target_clash" weight="1000.0" />
+		Reweight scoretype="hbond_lr_bb" weight="1.0" />
+		Reweight scoretype="atom_pair_constraint" weight="1.0" />
+		Reweight scoretype="angle_constraint" weight="1.0" />
+		Reweight scoretype="dihedral_constraint" weight="1.0" />
+	</ScoreFunction>
+</SCOREFXNS>
+
+<RESIDUE_SELECTORS>
+    <Layer name="core" select_core="true" select_boundary="false" select_surface="false" core_cutoff="4.8" surface_cutoff="2.0" use_sidechain_neighbors="true"/>
+</RESIDUE_SELECTORS>
+
+<TASKOPERATIONS>
+</TASKOPERATIONS>
+
+<FILTERS>
+    <ScoreType name="clash_check" scorefxn="SFXN1" score_type="target_clash" threshold="2500" confidence="1" />
+    <ResidueCount name="core_count" max_residue_count="1000" min_residue_count="0" count_as_percentage="false" residue_selector="core" confidence="0" />
+    <ResidueCount name="res_count" max_residue_count="9999" confidence="0"/>
+    <CalculatorFilter name="core_percentage" equation="-1.0*core_count / res_count" threshold="-0.20" confidence="1">
+        <Var name="core_count" filter="core_count"/>
+        <Var name="res_count" filter="res_count"/>
+    </CalculatorFilter>
+</FILTERS>
+
+<TASKOPERATIONS>
+</TASKOPERATIONS>
+
+<MOVERS>
+	SetSecStructEnergies name="set_ssene1" scorefxn="SFXN1" blueprint="%%blueprint%%" natbias_ss="0" natbias_hh="0" natbias_hs="0" />	
+    BluePrintBDR name="bdr1" use_abego_bias="1" scorefxn="SFXN1" constraints_NtoC="-1.0" loop_mover="RemodelLoopMoverExtend" loop_sampling_weight="10" blueprint="%%blueprint%%" />
+    standard BDR, and I guess it should work too
+    <BluePrintBDR name="bdr1" use_abego_bias="1" scorefxn="SFXN1" constraints_NtoC="-1.0" blueprint="%%blueprint%%" />
+	<DumpPdb name="dump" fname="%%dumpname%%" tag_time="True"/>
+	<ParsedProtocol name="build_dssp1" >
+        <Add mover_name="bdr1" />
+        <Add filter_name="clash_check" />
+        <Add filter_name="core_percentage" />
+		<Add mover_name="dump"/>
+	</ParsedProtocol>
+	<LoopOver name="lover1" mover_name="build_dssp1" iterations="%%iterations%%" drift="0" ms_whenfail="FAIL_DO_NOT_RETRY" />
+	<ParsedProtocol name="phase1" >
+		Add mover_name="set_ssene1" />
+		<Add mover_name="lover1" />
+	</ParsedProtocol>
+</MOVERS>
+
+<PROTOCOLS>
+	<Add mover_name="phase1" />
+</PROTOCOLS>
+
+</ROSETTASCRIPTS>

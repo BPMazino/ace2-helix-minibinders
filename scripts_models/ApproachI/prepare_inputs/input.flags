@@ -1,0 +1,39 @@
+## Input:
+-in:file:s motif.pdb
+
+## Beta_nov15 scorefunction:
+#-beta_nov15
+
+## Best practice flags:
+-ex1
+-ex2aro
+-use_input_sc
+-no_his_his_pairE
+-nblist_autoupdate true
+-chemical:exclude_patches LowerDNA UpperDNA Cterm_amidation SpecialRotamer VirtualBB ShoveBB VirtualDNAPhosphate VirtualNTerm CTermConnect sc_orbitals pro_hydroxylated_case1 pro_hydroxylated_case2 ser_phosphorylated thr_phosphorylated tyr_phosphorylated tyr_sulfated lys_dimethylated lys_monomethylated  lys_trimethylated lys_acetylated glu_carboxylated cys_acetylated tyr_diiodinated N_acetylated C_methylamidated MethylatedProteinCterm
+
+## For ramping down constraints during relaxes:
+-relax::ramp_constraints true
+
+## Flags to reduce the verbosity of the output:
+#-mute core.pack.interaction_graph.interaction_graph_factory
+#-mute core.scoring.rms_util
+#-mute core.pack.task
+#-mute core.scoring.NeighborList
+#-mute core.pack.annealer.MultiCoolAnnealer
+#-mute core.pack.pack_rotamers
+#-mute protocols.forge.remodel.RemodelDesignMover
+#
+
+#-in:file:vall ./sampling/filtered.vall.dat.2006-05-05_longxing.gz
+-staged_sampling
+-use_same_length_fragments false
+-picking_old_max_score 0.9
+
+#
+# turn on the flags if you are using motif score
+#-mh:path:scores_BB_BB /net/scratch/longxing/Scaffolds/motifs/xs_bb_ss_AFILVWY_FILWY_resl0.5_smooth1.3_msc0.3_mbv1.0/bounding_1-15__xs_bb_ss_AFILVWY_FILWY_resl0.5_smooth1.3_msc0.3_mbv1.0
+#-score:max_motif_per_res 3.0
+#-score:ignore_terminal_ss_elements 2
+#-ignore_terminal_ss_elements 2
+#-score:motif_residues 36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72

@@ -1,0 +1,1 @@
+cd /home/mazino/Downloads/scripts_models/ApproachI/prepare_inputs/*bp; rosetta_scripts  @input.flags -parser:protocol design_2019CoV.xml -parser:script_vars blueprint=*bp.bp dumpname=*bp iterations=200

@@ -1,0 +1,263 @@
+<ROSETTASCRIPTS>
+    <SCOREFXNS>
+        <ScoreFunction name="sfxn" weights="beta_nov16" />
+        <ScoreFunction name="sfxn_monomer" weights="beta_nov16" >
+            <Reweight scoretype="approximate_buried_unsat_penalty" weight="5.0" />
+            <Set approximate_buried_unsat_penalty_burial_atomic_depth="3.5"/>
+            <Reweight scoretype="res_type_constraint" weight="1.5" />
+            <Reweight scoretype="netcharge" weight="1.0" />
+            <Reweight scoretype="aa_composition" weight="1.0" />
+        </ScoreFunction>
+        <ScoreFunction name="sfxn_interface" weights="beta_nov16" >
+            <Reweight scoretype="approximate_buried_unsat_penalty" weight="5.0" />
+            <Set approximate_buried_unsat_penalty_burial_atomic_depth="3.5"/>
+            <Reweight scoretype="netcharge" weight="1.0" />
+            <Reweight scoretype="aa_composition" weight="1.0" />
+        </ScoreFunction>
+    </SCOREFXNS>
+    <RESIDUE_SELECTORS>
+        <ResiduePDBInfoHasLabel name="hotspots" property="HOTSPOT" />
+        <ResiduePDBInfoHasLabel name="motif" property="MOTIF" />
+        <Not name="not_hotspots" selector="hotspots" />
+        <Not name="not_motif" selector="motif" />
+        <And name="motif_not_hotspots" selectors="motif,not_hotspots" />
+        # 74,85,89,113,114,115,117,121,123,124,125,126,141,142,143,144,145,152,153,154,155,156,157,158,159,160,161,162,163,164,166,167,168,169,170
+        <Index name="res_set1" resnums="26,27,28,29,30,32,33,34,35,36,37,38,39,40,41,42,43,44,51,52,53,54,55,70,71,72,73,75,79,81,82,83,107,111,122" error_on_out_of_bounds_index="true" reverse="true" />
+        # 71,73,74,85,89,113,114,115,117,121,123,124,125,126,141,142,143,144,145,152,153,154,155,156,157,158,159,160,161,162,163,164,166,167,168,169,170,173
+        <Index name="res_set2" resnums="23,26,27,28,29,30,32,33,34,35,36,37,38,39,40,41,42,43,44,51,52,53,54,55,70,71,72,73,75,79,81,82,83,107,111,122,123,125" error_on_out_of_bounds_index="true" reverse="true" />
+        
+        <Chain name="chainA" chains="A"/>
+        <Chain name="chainB" chains="B"/>
+        <Neighborhood name="interface_chA" selector="chainB" distance="8.0" />
+        <Neighborhood name="interface_chB" selector="chainA" distance="8.0" />
+        <And name="AB_interface" selectors="interface_chA,interface_chB" />
+        <Not name="Not_interface" selector="AB_interface" />
+
+        <And name="chainA_not_motif" selectors="not_motif,chainA" />
+        <And name="chainA_not_hotspots" selectors="not_hotspots,chainA" />
+        <And name="interface_chA_not_hotspots" selectors="not_hotspots,interface_chA,chainA" />
+        <And name="interface_not_hotspots" selectors="not_hotspots,AB_interface" />
+        
+        <ResidueName name="pro_and_gly_positions" residue_name3="PRO,GLY" />
+        <ResidueName name="apolar" residue_name3="ALA,CYS,PHE,ILE,LEU,MET,THR,PRO,VAL,TRP,TYR" />
+        <Not name="polar" selector="apolar" />
+
+
+        <!-- Layer Design -->
+        <Index name="Nter" resnums="1" error_on_out_of_bounds_index="true" reverse="false" />
+        <Index name="Cter" resnums="196" error_on_out_of_bounds_index="true" reverse="true" />
+        <Layer name="surface" select_core="false" select_boundary="false" select_surface="true" use_sidechain_neighbors="true"/>
+        <Layer name="boundary" select_core="false" select_boundary="true" select_surface="false" use_sidechain_neighbors="true"/>
+        <Layer name="core" select_core="true" select_boundary="false" select_surface="false" use_sidechain_neighbors="true"/>
+        <SecondaryStructure name="sheet" overlap="0" minH="3" minE="2" include_terminal_loops="false" use_dssp="true" ss="E"/>
+        <SecondaryStructure name="entire_loop" overlap="0" minH="3" minE="2" include_terminal_loops="true" use_dssp="true" ss="L"/>
+        <SecondaryStructure name="entire_helix" overlap="0" minH="3" minE="2" include_terminal_loops="false" use_dssp="true" ss="H"/>
+        <And name="helix_cap" selectors="entire_loop">
+            <PrimarySequenceNeighborhood lower="1" upper="0" selector="entire_helix"/>
+        </And>
+        <And name="helix_start" selectors="entire_helix">
+            <PrimarySequenceNeighborhood lower="0" upper="1" selector="helix_cap"/>
+        </And>
+        <And name="helix" selectors="entire_helix">
+            <Not selector="helix_start"/>
+        </And>
+        <And name="loop" selectors="entire_loop">
+            <Not selector="helix_cap"/>
+        </And>
+    </RESIDUE_SELECTORS>
+    <MOVE_MAP_FACTORIES>
+        <MoveMapFactory name="mmf_stage1" bb="0" chi="0" jumps="0">
+            <Chi residue_selector="interface_chA_not_hotspots" />
+        </MoveMapFactory>
+
+        <MoveMapFactory name="mmf_stage2" bb="0" chi="0" jumps="0">
+            <Chi residue_selector="chainA_not_hotspots" />
+            <Backbone residue_selector="chainA_not_motif" />
+        </MoveMapFactory>
+
+        <!-- TO DO -->
+        <MoveMapFactory name="mmf_stage3" bb="0" chi="0" jumps="0">
+            <Chi residue_selector="interface_not_hotspots" />
+            <Backbone residue_selector="chainA_not_motif" />
+        </MoveMapFactory>
+
+        <MoveMapFactory name="mmf_relax" bb="0" chi="0" jumps="0">
+            <Chi residue_selector="chainA_not_hotspots" />
+            <Backbone residue_selector="chainA_not_motif" />
+        </MoveMapFactory>
+    </MOVE_MAP_FACTORIES>
+    <TASKOPERATIONS>
+        <ProteinInterfaceDesign name="pack_long" design_chain1="0" design_chain2="0" jump="1" interface_distance_cutoff="15"/>
+        
+        ####################################### commonly used taskops ########################################################
+        <InitializeFromCommandline name="init" />
+        <IncludeCurrent name="current" />
+        <LimitAromaChi2 name="limitchi2" chi2max="110" chi2min="70" include_trp="True" />
+        <ExtraRotamersGeneric name="ex1_ex2" ex1="1" ex2aro="1" />
+        <ExtraRotamersGeneric name="ex1" ex1="1" />
+        <ConsensusLoopDesign name="consensus_loop" />
+        ####################################### layer design  #################################################
+
+        <DesignRestrictions name="layer_design_monomer">
+            <Action selector_logic="Nter AND chainA" aas="ADEFGHIKLNPQRSTVWY" />
+            <Action selector_logic="Cter AND chainA" aas="ADEFGHIKLNPQRSTVWY" />
+            <Action selector_logic="surface AND helix_start AND chainA"	aas="DEHKPQR"/>
+            <Action selector_logic="surface AND helix AND chainA"		aas="EHKQR"/>
+            <Action selector_logic="surface AND sheet AND chainA"		aas="EHKNQRST"/>
+            <Action selector_logic="surface AND loop AND chainA"		aas="DEGHKNPQRST"/>
+            <Action selector_logic="boundary AND helix_start AND chainA"	aas="ADEHIKLNPQRSTVWY"/>
+            <Action selector_logic="boundary AND helix AND chainA"		aas="ADEHIKLNQRSTVWY"/>
+            <Action selector_logic="boundary AND sheet AND chainA"		aas="DEFHIKLNQRSTVWY"/>
+            <Action selector_logic="boundary AND loop AND chainA"		aas="ADEFGHIKLNPQRSTVWY"/>
+            <Action selector_logic="core AND helix_start AND chainA"		aas="AFILPVWY"/>
+            <Action selector_logic="core AND helix AND chainA"			aas="AFILVWY"/>
+            <Action selector_logic="core AND sheet AND chainA"			aas="FILVWY"/>
+            <Action selector_logic="core AND loop AND chainA"			aas="AFGILPVWY"/>
+            <Action selector_logic="helix_cap AND chainA"			aas="DNST"/>
+        </DesignRestrictions>
+
+        <DesignRestrictions name="layer_design">
+            <Action selector_logic="Nter AND chainA" aas="ADEFGHIKLMNPQRSTVWY" />
+            <Action selector_logic="Cter AND chainA" aas="ADEFGHIKLMNPQRSTVWY" />
+            <Action selector_logic="surface AND helix_start AND chainA"	aas="EHKPQRDNST"/>
+            <Action selector_logic="surface AND helix AND chainA"		aas="EHKQRDNTS"/>
+            <Action selector_logic="surface AND sheet AND chainA"		aas="DEHKNQRST"/>
+            <Action selector_logic="surface AND loop AND chainA"		aas="DEGHKNPQRST"/>
+            <Action selector_logic="boundary AND helix_start AND chainA"	aas="ADEIKLMNPQRSTVWY"/>
+            <Action selector_logic="boundary AND helix AND chainA"		aas="ADEFIKLMNQRSTVWY"/>#add F for boundary, as pointed by Brian. In the original LayerDesign setting, F in not allowed here.
+            <Action selector_logic="boundary AND sheet AND chainA"		aas="DEFIKLNQRSTVWY"/>
+            <Action selector_logic="boundary AND loop AND chainA"		aas="ADEFGIKLNPQRSTVWY"/>
+            <Action selector_logic="core AND helix_start AND chainA"		aas="AFILMPVWY"/>
+            <Action selector_logic="core AND helix AND chainA"			aas="AFILMVWYDENQTS"/>
+            <Action selector_logic="core AND sheet AND chainA"			aas="FILMVWYDENQST"/># add M
+            <Action selector_logic="core AND loop AND chainA"			aas="AFGILMPVWY"/>
+            <Action selector_logic="helix_cap AND chainA"			aas="DNST"/>
+        </DesignRestrictions>
+        
+        #################################################### restrict to interface
+        <OperateOnResidueSubset name="restrict_to_interface" selector="Not_interface">
+            <PreventRepackingRLT/>
+        </OperateOnResidueSubset>
+        <OperateOnResidueSubset name="freeze_target" selector="chainB">
+            <PreventRepackingRLT/>
+        </OperateOnResidueSubset>
+        <OperateOnResidueSubset name="restrict_target2repacking" selector="chainB">
+            <RestrictToRepackingRLT/>
+        </OperateOnResidueSubset>
+        
+        ######################       freeze key residues       #######################
+        <OperateOnResidueSubset name="freeze_hotspots" selector="hotspots" >
+            <PreventRepackingRLT/>
+        </OperateOnResidueSubset>
+        <OperateOnResidueSubset name="freeze_set1" selector="res_set1" >
+            <PreventRepackingRLT/>
+        </OperateOnResidueSubset>
+        <OperateOnResidueSubset name="freeze_set2" selector="res_set2" >
+            <PreventRepackingRLT/>
+        </OperateOnResidueSubset>
+
+
+        ######################       some other task operations       #######################
+        <ProteinProteinInterfaceUpweighter name="up_ppi" interface_weight="2" skip_loop_in_chain="A" />
+        
+    </TASKOPERATIONS>
+    <MOVERS>
+        <SwitchChainOrder name="chain1onlypre" chain_order="1" />
+        <ScoreMover name="scorepose" scorefxn="sfxn" verbose="false" />
+        <ParsedProtocol name="chain1only">
+            <Add mover="chain1onlypre" />
+            <Add mover="scorepose" />
+        </ParsedProtocol>
+        <TaskAwareMinMover name="min" scorefxn="sfxn" bb="0" chi="1" task_operations="pack_long" />
+    </MOVERS>
+    <FILTERS>
+        <!-- interface metric -->
+        <Sasa name="interface_buried_sasa" threshold="1317.457" jump="1" confidence="0" />
+        <Ddg name="ddg"  threshold="-22.954" jump="1" repeats="3" repack="1" relax_mover="min" confidence="0" scorefxn="sfxn" />
+        <Ddg name="ddg_norepack"  threshold="-39.457" jump="1" repeats="1" repack="0" confidence="0" scorefxn="sfxn" />
+        <ShapeComplementarity name="interface_sc" verbose="0" min_sc="0.55" write_int_area="1" write_median_dist="1" jump="1" confidence="0"/>
+        <ContactMolecularSurface name="contact_area_target" verbose="0" distance_weight="0.5" confidence="0" target_selector="chainB" binder_selector="chainA" min_interface="350.053" />
+    
+        <!-- score per res -->
+        <ScoreType name="total_score_MBF" scorefxn="sfxn" score_type="total_score" threshold="0" confidence="0" />
+        <MoveBeforeFilter name="total_score_monomer" mover="chain1only" filter="total_score_MBF" confidence="0" />
+        <ResidueCount name="res_count_MBF" max_residue_count="9999" confidence="0"/>
+        <MoveBeforeFilter name="res_count_monomer" mover="chain1only" filter="res_count_MBF" confidence="0" />
+        <CalculatorFilter name="score_per_res" equation="total_score_monomer / res" threshold="-3.5" confidence="0">
+            <Var name="total_score_monomer" filter="total_score_monomer"/>
+            <Var name="res" filter="res_count_monomer"/>
+        </CalculatorFilter>
+
+        <!-- fragment quality -->
+        SSPrediction name="pre_mismatch_probability" confidence="0" cmd="/suppscr/baker/longxing/software/psipred/runpsipred_single" use_probability="1" mismatch_probability="1" use_svm="0" />
+        MoveBeforeFilter name="mismatch_probability" mover="chain1only" filter="pre_mismatch_probability" confidence="0" />
+        <worst9mer name="worst9mer_a" confidence="0" rmsd_lookup_threshold="0.01" residue_selector="chainA" report_mean_median="true" only_helices="0" />
+        <worst9mer name="worst9mer_h" confidence="0" rmsd_lookup_threshold="0.01" residue_selector="chainA" report_mean_median="true" only_helices="1" />
+        <SSShapeComplementarity name="ss_sc" verbose="0" confidence="0" residue_selector="chainA" />
+        <SSShapeComplementarity name="helix_sc" verbose="1" loops="0" helices="1" confidence="0" residue_selector="chainA" />
+        <SSShapeComplementarity name="loop_sc" verbose="1" loops="1" helices="0" confidence="0" residue_selector="chainA" />
+    </FILTERS>
+    <MOVERS>
+        <!-- FoldTree -->
+        <FoldTreeFromMotif name="ft" residue_selector="motif" />
+
+        <!-- aa preference -->
+        <StructProfileMover name="genProfile" RMSthreshold="0.6" add_csts_to_pose="1" consider_topN_frags="100" eliminate_background="0" ignore_terminal_residue="1" only_loops="0" burialWt="0" residue_selector="chainA"/>
+        <AddCompositionConstraintMover name="trp_comp" selector="chainA">
+            <Comp entry="PENALTY_DEFINITION; TYPE TRP; ABSOLUTE 0; DELTA_START 0;DELTA_END 1;PENALTIES 0 3; BEFORE_FUNCTION CONSTANT;AFTER_FUNCTION LINEAR; END_PENALTY_DEFINITION;"/>
+        </AddCompositionConstraintMover>
+        AddNetChargeConstraintMover name="netcharge_cst" filename="/suppscr/baker/longxing/2019nCoV/design_scripts/minus1.charge" selector="chainA" />
+        <ClearCompositionConstraintsMover name="clear_composition_cst" />
+
+        <!-- fast pack interface and min -->
+        <MutateResidue name="mut" residue_selector="motif_not_hotspots" new_res="VAL" preserve_atom_coords="false" mutate_self="false" />
+        <PackRotamersMover name="hard_pack" scorefxn="sfxn" task_operations="init,current,ex1,ex1_ex2,limitchi2,restrict_to_interface,restrict_target2repacking,freeze_hotspots,freeze_set1,layer_design,up_ppi"/>
+        <MinMover name="hard_min" scorefxn="sfxn" movemap_factory="mmf_stage1" cartesian="false" type="dfpmin_armijo_nonmonotone" tolerance="0.01" max_iter="200" />
+
+        <!-- FastDesign -->
+        <FastDesign name="FastDesign_monomer" scorefxn="sfxn_monomer" movemap_factory="mmf_stage2" repeats="3" task_operations="init,current,freeze_target,freeze_hotspots,consensus_loop,layer_design_monomer" batch="false" ramp_down_constraints="false" cartesian="false" bondangle="false" bondlength="false" min_type="dfpmin_armijo_nonmonotone" />
+        <FastDesign name="FastDesign_interface" scorefxn="sfxn_interface" movemap_factory="mmf_stage3" repeats="3" task_operations="init,current,limitchi2,ex1_ex2,ex1,freeze_hotspots,restrict_to_interface,restrict_target2repacking,freeze_set1,layer_design,up_ppi" batch="false" ramp_down_constraints="false" cartesian="false" bondangle="false" bondlength="false" min_type="dfpmin_armijo_nonmonotone" />
+        <FastRelax name="FastRelax" scorefxn="sfxn" movemap_factory="mmf_relax" repeats="1" batch="false" ramp_down_constraints="false" cartesian="false" bondangle="false" bondlength="false" min_type="dfpmin_armijo_nonmonotone" task_operations="freeze_target,freeze_hotspots,limitchi2,init,current,ex1,ex1_ex2" />
+    </MOVERS>
+    <APPLY_TO_POSE>
+    </APPLY_TO_POSE>
+    <PROTOCOLS>
+        <!-- FoldTree from the motif -->
+        <FoldTreeFromMotif name="ft" residue_selector="motif" />
+
+        <!-- design -->
+        <Add mover_name="mut" />
+        <Add mover_name="hard_pack" />
+        <Add mover_name="hard_min" />
+
+        <Add mover_name="trp_comp" />
+        <Add mover_name="genProfile" />
+        Add mover_name="netcharge_cst" />
+        <!-- monomer design -->
+        <Add mover_name="FastDesign_monomer" />
+        
+        <!-- interface design -->
+        <Add mover_name="FastDesign_interface" />
+
+        <Add mover_name="clear_composition_cst" />
+
+        <!-- fast relax -->
+        <Add mover_name="FastRelax" />
+
+        <!-- scoring -->
+        <Add filter_name="score_per_res" />
+        <Add filter_name="interface_buried_sasa" />
+        <Add filter_name="contact_area_target" />
+        <Add filter_name="ddg" />
+        <Add filter_name="ddg_norepack" />
+        <Add filter_name="interface_sc" />
+
+        <Add filter_name="worst9mer_a" />
+        <Add filter_name="worst9mer_h" />
+        Add filter_name="mismatch_probability" />
+        <Add filter_name="ss_sc" />
+        <Add filter_name="helix_sc" />
+        <Add filter_name="loop_sc" />
+    </PROTOCOLS>
+    <OUTPUT />
+</ROSETTASCRIPTS>
